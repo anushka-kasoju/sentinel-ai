@@ -1,23 +1,28 @@
 package com.sentinelai.backend.controller;
 
 import com.sentinelai.backend.dto.RegisterRequest;
+import com.sentinelai.backend.dto.LoginRequest;
 import com.sentinelai.backend.dto.UserResponse;
 import com.sentinelai.backend.entity.User;
 import com.sentinelai.backend.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import com.sentinelai.backend.dto.LoginResponse;
+import com.sentinelai.backend.service.JwtService;
+
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserService userService;
+private final JwtService jwtService;
 
-    public AuthController(UserService userService) {
-        this.userService = userService;
-    }
-
+public AuthController(UserService userService, JwtService jwtService) {
+    this.userService = userService;
+    this.jwtService = jwtService;
+}
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse register(@Valid @RequestBody RegisterRequest request) {
@@ -32,4 +37,21 @@ public class AuthController {
                 user.getCreatedAt()
         );
     }
+    @PostMapping("/login")
+public LoginResponse login(@Valid @RequestBody LoginRequest request) {
+
+    User user = userService.authenticateUser(request);
+
+    String token = jwtService.generateToken(user.getEmail());
+
+    UserResponse userResponse = new UserResponse(
+            user.getId(),
+            user.getName(),
+            user.getEmail(),
+            user.getRole(),
+            user.getCreatedAt()
+    );
+
+    return new LoginResponse(token, userResponse);
+}
 }
